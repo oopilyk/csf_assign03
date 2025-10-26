@@ -87,7 +87,7 @@ private:
         }
         // it was a miss
         load_misses++;
-        total_cycles += 100;
+        total_cycles += 100 * (block_size / 4);
         
         allocateBlock(set, tag);
     }
@@ -112,7 +112,7 @@ private:
         store_misses++;
         
         if (write_allocate) {
-            total_cycles += 100;
+            total_cycles += 100 * (block_size / 4);
             allocateBlock(set, tag);
             if (!write_through) {
                 for (int i = 0; i < num_blocks_per_set; i++) {
@@ -163,9 +163,11 @@ private:
                 }
             }
         }
+    
         if (set.blocks[evict_index].dirty && !write_through) {
-            total_cycles += 100; // Writeback to memory
+            total_cycles += 100 * (block_size / 4); // Writeback to memory
         }
+
         set.blocks[evict_index].valid = true;
         set.blocks[evict_index].tag = tag;
         set.blocks[evict_index].lru_count = ++global_counter;
@@ -250,8 +252,10 @@ int main( int argc, char **argv ) {
   
   // Check for invalid combination
   if (!write_allocate && !write_through) {
+
     std::cerr << "no-write-allocate and write-back is an invalid combination" << std::endl;
     return 1;
+
   }
   
   // Create cache simulator
