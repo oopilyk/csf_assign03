@@ -81,7 +81,10 @@ private:
         for (int i = 0; i < num_blocks_per_set; i++) {
             if (set.blocks[i].valid && set.blocks[i].tag == tag) {
                 load_hits++;
-                set.blocks[i].lru_count = ++global_counter;
+                //only set to ++ global counter on hit if lru on load
+                if (lru_eviction) {
+                    set.blocks[i].lru_count = ++global_counter;
+                }
                 return;
             }
         }
@@ -100,7 +103,10 @@ private:
         for (int i = 0; i < num_blocks_per_set; i++) {
             if (set.blocks[i].valid && set.blocks[i].tag == tag) {
                 store_hits++;
-                set.blocks[i].lru_count = ++global_counter;
+                //only set to ++ global counter on hit if lru on store
+                if (lru_eviction) {
+                    set.blocks[i].lru_count = ++global_counter;
+                }
                 if (!write_through) {
                     set.blocks[i].dirty = true;
                 } else {
@@ -145,22 +151,11 @@ private:
     void evictBlock(CacheSet& set, unsigned int tag) {
         int evict_index = 0;
         
-        if (lru_eviction) {
-            unsigned int min_counter = set.blocks[0].lru_count;
-            for (int i = 1; i < num_blocks_per_set; i++) {
-                if (set.blocks[i].lru_count < min_counter) {
-                    min_counter = set.blocks[i].lru_count;
-                    evict_index = i;
-                }
-            }
-        } else {
-            // fifo doesnt work yet
-            unsigned int min_counter = set.blocks[0].lru_count;
-            for (int i = 1; i < num_blocks_per_set; i++) {
-                if (set.blocks[i].lru_count < min_counter) {
-                    min_counter = set.blocks[i].lru_count;
-                    evict_index = i;
-                }
+        unsigned int min_counter = set.blocks[0].lru_count;
+        for (int i = 1; i < num_blocks_per_set; i++) {
+            if (set.blocks[i].lru_count < min_counter) {
+                min_counter = set.blocks[i].lru_count;
+                evict_index = i;
             }
         }
     
@@ -170,7 +165,7 @@ private:
 
         set.blocks[evict_index].valid = true;
         set.blocks[evict_index].tag = tag;
-        set.blocks[evict_index].lru_count = ++global_counter;
+        set.blocks[evict_index].lru_count = ++global_counter; //new block is most recently used and last in
         set.blocks[evict_index].dirty = false;
     }
     
