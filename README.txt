@@ -1,9 +1,656 @@
-TODO: names of team members and their contributions to the project
+
+The first experiment we ran was testing lru vs fifo, and in every case, lru performed better in hit rate, average
+memory access time (AMAT), and average cycles per access (ACPA). AMAT is calculated as the time it takes for a hit (1 cycle)
+plus the miss rate * the cost of a miss, in this simulator case 100 * blocks size / 4. For the following experiments, 
+lru will be used. The reason for all of the experiments is to attempt to find the lowest AMAT and ACPA, 
+to find the best cache. The way in which each test was gone about was running the specified experiment variable as
+an independent, where then the results were looked at and analyzed. We have attached the complete process and notes
+at the end of the README in case you need to know more about the process, if not, please ignore it.
+
+The next experiment was reducing cache size (sets in the cache), and we determined that doing so only 
+lowers hit rate, and increases AMAT and ACPA. Overall lowered performance, however less total space used,
+calculated by total data bytes and overhead bytes.
+
+Next experiment was increasing the blocks per set, which yielded that the more blocks per set, the better the 
+performance, but only very little, while doubling the space usage for each increment of a power of 2.
+
+Next experiment was lowering the number of bytes in the block, which showed that while greatly decreasing AMAT
+and ACPA and space usage, it also lowered the overall hit rate. A subsection in this experiment included changing 
+blocks per set and bytes per block, but the patterns stayed consistent as listed.
+
+Next experiment was changing write-back and write-through, where everything was the same, except for the ACPA, which 
+write-through was significantly increased, lowering performance. Different cache configurations all yielded the same 
+result,such as smaller cache and lru vs fifo (fifo still performed worse than lru as well).
+
+Testing no-write-allocate versus write-allocate, no-write-allocate was significantly worse in hit rate
+and AMAT, but slightly better than its write-allocate/write-through counterpart, but both are worse than write-back 
+straight up.
+
+The end of the experimentation leads us to the result of lru, maximizing cache size, maximize blocks per set, minimize bytes 
+per block, write-back, write-through cache. Testing variations with different trace files as well, all lead to a
+configuration that consists of these properties. An example call of one could be:
+
+./csim 1024 32 4 write-allocate write-back lru < gcc.trace
+
+where increasing the 1024 and 32 inputs would lead to better performance but more space used, all depends
+on how much space you have to work with. For example, this configuration uses 360448 bytes and has AMAT of 6.18267
+and ACPA of 7.78459. This configuration:
+
+./csim 2048 64 4 write-allocate write-back lru < gcc.trace 
+
+has 2048 sets in the cache and 64 blocks per set, while maintaining minimum bytes per block, and uses 1441790 bytes
+but has better AMAT of 6.16406 and ACPA of 7.16406. In conclusion, maximize sets per cache, maximize blocks per set,
+minimize bytes per block, write-back, write-through, and maximize until your space constraints allow, minimize until
+the space you need per block is at its lowest.
+
 
 Kyle Li:
-Implemented LRU and partially implemented FIFO.
+Implemented cache configuration and LRU 
 
 Jacob Peery:
-Argument validation
+Argument validation, fifo, best cache report
 
-TODO (for MS3): best cache report
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+./csim 256 1 16 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 211533
+Load misses: 9135
+Store hits: 70212
+Store misses: 12313
+Total cycles: 14381193
+Hit rate: 0.92926
+Miss rate: 0.0707404
+Average memory access time: 28.2962
+Average cycles per access: 47.4325
+Number of blocks: 256
+Data bytes: 4096
+Total overhead bytes: 1792
+Total bytes used: 5888
+
+./csim 256 1 16 write-allocate write-back fifo < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 211533
+Load misses: 9135
+Store hits: 70212
+Store misses: 12313
+Total cycles: 14381193
+Hit rate: 0.92926
+Miss rate: 0.0707404
+Average memory access time: 28.2962
+Average cycles per access: 47.4325
+Number of blocks: 256
+Data bytes: 4096
+Total overhead bytes: 1792
+Total bytes used: 5888
+
+with only 1 block per set, fifo and lru exact same, very poor performance
+
+
+
+./csim 256 4 16 write-allocate write-back fifo < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 218357
+Load misses: 2311
+Store hits: 71787
+Store misses: 10738
+Total cycles: 9655593
+Hit rate: 0.956961
+Miss rate: 0.0430386
+Average memory access time: 17.2154
+Average cycles per access: 31.8464
+Number of blocks: 1024
+Data bytes: 16384
+Total overhead bytes: 7168
+Total bytes used: 23552
+
+./csim 256 4 16 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219507
+Load misses: 1161
+Store hits: 71956
+Store misses: 10569
+Total cycles: 9009593
+Hit rate: 0.961312
+Miss rate: 0.0386882
+Average memory access time: 15.4753
+Average cycles per access: 29.7157
+Number of blocks: 1024
+Data bytes: 16384
+Total overhead bytes: 7168
+Total bytes used: 23552
+
+lru performs better with 4 blocks per set, having higher hit rate, lower access time and cycles per access
+
+
+
+./csim 64 4 16 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 214923
+Load misses: 5745
+Store hits: 71353
+Store misses: 11172
+Total cycles: 11733193
+Hit rate: 0.944204
+Miss rate: 0.0557961
+Average memory access time: 22.3185
+Average cycles per access: 38.6988
+Number of blocks: 256
+Data bytes: 4096
+Total overhead bytes: 1792
+Total bytes used: 5888
+
+./csim 32 4 16 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 210955
+Load misses: 9713
+Store hits: 70387
+Store misses: 12138
+Total cycles: 14283193
+Hit rate: 0.92793
+Miss rate: 0.0720696
+Average memory access time: 28.8278
+Average cycles per access: 47.1092
+Number of blocks: 128
+Data bytes: 2048
+Total overhead bytes: 1024
+Total bytes used: 3072
+
+./csim 16 4 16 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 206490
+Load misses: 14178
+Store hits: 68489
+Store misses: 14036
+Total cycles: 18013193
+Hit rate: 0.906944
+Miss rate: 0.0930562
+Average memory access time: 37.2225
+Average cycles per access: 59.4116
+Number of blocks: 64
+Data bytes: 1024
+Total overhead bytes: 512
+Total bytes used: 1536
+
+it seems the smaller the cache gets the worse the performance it gets, but obv less space
+
+
+
+./csim 256 8 16 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219607
+Load misses: 1061
+Store hits: 72010
+Store misses: 10515
+Total cycles: 8509993
+Hit rate: 0.96182
+Miss rate: 0.0381803
+Average memory access time: 15.2721
+Average cycles per access: 28.0679
+Number of blocks: 2048
+Data bytes: 32768
+Total overhead bytes: 14336
+Total bytes used: 47104
+
+Total loads: 220668
+Total stores: 82525
+Load hits: 219651
+Load misses: 1017
+Store hits: 72017
+Store misses: 10508
+Total cycles: 7761593
+Hit rate: 0.961988
+Miss rate: 0.0380121
+Average memory access time: 15.2048
+Average cycles per access: 25.5995
+Number of blocks: 4096
+Data bytes: 65536
+Total overhead bytes: 28672
+Total bytes used: 94208
+
+very fractional improvements in performance increasing blocks per set, but double space usage
+
+
+
+./csim 256 4 4 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 214159
+Load misses: 6509
+Store hits: 60907
+Store misses: 21618
+Total cycles: 5304493
+Hit rate: 0.907231
+Miss rate: 0.0927693
+Average memory access time: 9.27693
+Average cycles per access: 17.4954
+Number of blocks: 1024
+Data bytes: 4096
+Total overhead bytes: 7168
+Total bytes used: 11264
+
+./csim 256 4 8 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 218561
+Load misses: 2107
+Store hits: 63800
+Store misses: 18725
+Total cycles: 8156593
+Hit rate: 0.931291
+Miss rate: 0.0687087
+Average memory access time: 13.7417
+Average cycles per access: 26.9023
+Number of blocks: 1024
+Data bytes: 8192
+Total overhead bytes: 7168
+Total bytes used: 15360
+
+./csim 256 4 32 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219966
+Load misses: 702
+Store hits: 76691
+Store misses: 5834
+Total cycles: 9602393
+Hit rate: 0.978443
+Miss rate: 0.0215572
+Average memory access time: 17.2458
+Average cycles per access: 31.6709
+Number of blocks: 1024
+Data bytes: 32768
+Total overhead bytes: 7168
+Total bytes used: 39936
+
+./csim 256 8 4 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 218361
+Load misses: 2307
+Store hits: 61477
+Store misses: 21048
+Total cycles: 4689393
+Hit rate: 0.92297
+Miss rate: 0.0770301
+Average memory access time: 7.70301
+Average cycles per access: 15.4667
+Number of blocks: 2048
+Data bytes: 8192
+Total overhead bytes: 14336
+Total bytes used: 22528
+
+./csim 256 8 8 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219112
+Load misses: 1556
+Store hits: 63941
+Store misses: 18584
+Total cycles: 7779393
+Hit rate: 0.933574
+Miss rate: 0.0664263
+Average memory access time: 13.2853
+Average cycles per access: 25.6582
+Number of blocks: 2048
+Data bytes: 16384
+Total overhead bytes: 14336
+Total bytes used: 30720
+
+./csim 256 16 4 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 218925
+Load misses: 1743
+Store hits: 61610
+Store misses: 20915
+Total cycles: 4477993
+Hit rate: 0.925269
+Miss rate: 0.0747313
+Average memory access time: 7.47313
+Average cycles per access: 14.7694
+Number of blocks: 4096
+Data bytes: 16384
+Total overhead bytes: 28672
+Total bytes used: 45056
+
+./csim 256 32 4 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 218984
+Load misses: 1684
+Store hits: 61645
+Store misses: 20880
+Total cycles: 4208493
+Hit rate: 0.925579
+Miss rate: 0.0744212
+Average memory access time: 7.44212
+Average cycles per access: 13.8806
+Number of blocks: 8192
+Data bytes: 32768
+Total overhead bytes: 57344
+Total bytes used: 90112
+
+lowering bytes per block greatly reduced memory access time and average cycles, but lowered hit rate
+still increasing blocks per set betters AMAT and ACPA, and increases hit rate
+
+
+
+./csim 256 4 16 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219507
+Load misses: 1161
+Store hits: 71956
+Store misses: 10569
+Total cycles: 9009593
+Hit rate: 0.961312
+Miss rate: 0.0386882
+Average memory access time: 15.4753
+Average cycles per access: 29.7157
+Number of blocks: 1024
+Data bytes: 16384
+Total overhead bytes: 7168
+Total bytes used: 23552
+
+./csim 256 4 16 write-allocate write-through lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219507
+Load misses: 1161
+Store hits: 71956
+Store misses: 10569
+Total cycles: 13247693
+Hit rate: 0.961312
+Miss rate: 0.0386882
+Average memory access time: 15.4753
+Average cycles per access: 43.6939
+Number of blocks: 1024
+Data bytes: 16384
+Total overhead bytes: 7168
+Total bytes used: 23552
+
+write through significantly higher cycles per access, everything else same, different configs:
+
+./csim 256 4 16 write-allocate write-through fifo < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 218357
+Load misses: 2311
+Store hits: 71787
+Store misses: 10738
+Total cycles: 13775293
+Hit rate: 0.956961
+Miss rate: 0.0430386
+Average memory access time: 17.2154
+Average cycles per access: 45.4341
+Number of blocks: 1024
+Data bytes: 16384
+Total overhead bytes: 7168
+Total bytes used: 23552
+
+./csim 256 4 16 write-allocate write-back fifo < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 218357
+Load misses: 2311
+Store hits: 71787
+Store misses: 10738
+Total cycles: 9655593
+Hit rate: 0.956961
+Miss rate: 0.0430386
+Average memory access time: 17.2154
+Average cycles per access: 31.8464
+Number of blocks: 1024
+Data bytes: 16384
+Total overhead bytes: 7168
+Total bytes used: 23552
+
+also performed worse in fifo, and fifo still worse than lru
+
+./csim 128 4 16 write-allocate write-back fifo < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 216476
+Load misses: 4192
+Store hits: 71495
+Store misses: 11030
+Total cycles: 10935593
+Hit rate: 0.949794
+Miss rate: 0.0502056
+Average memory access time: 20.0823
+Average cycles per access: 36.0681
+Number of blocks: 512
+Data bytes: 8192
+Total overhead bytes: 3584
+Total bytes used: 11776
+
+./csim 128 4 16 write-allocate write-through fifo < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 216476
+Load misses: 4192
+Store hits: 71495
+Store misses: 11030
+Total cycles: 14644493
+Hit rate: 0.949794
+Miss rate: 0.0502056
+Average memory access time: 20.0823
+Average cycles per access: 48.3009
+Number of blocks: 512
+Data bytes: 8192
+Total overhead bytes: 3584
+Total bytes used: 11776
+
+also worse on smaller cache
+
+
+
+./csim 256 4 16 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219507
+Load misses: 1161
+Store hits: 71956
+Store misses: 10569
+Total cycles: 9009593
+Hit rate: 0.961312
+Miss rate: 0.0386882
+Average memory access time: 15.4753
+Average cycles per access: 29.7157
+Number of blocks: 1024
+Data bytes: 16384
+Total overhead bytes: 7168
+Total bytes used: 23552
+
+./csim 256 4 16 no-write-allocate write-through lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 218072
+Load misses: 2596
+Store hits: 58030
+Store misses: 24495
+Total cycles: 9594093
+Hit rate: 0.910648
+Miss rate: 0.0893523
+Average memory access time: 35.7409
+Average cycles per access: 31.6435
+Number of blocks: 1024
+Data bytes: 16384
+Total overhead bytes: 7168
+Total bytes used: 23552
+
+./csim 256 4 16 write-allocate write-through lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219507
+Load misses: 1161
+Store hits: 71956
+Store misses: 10569
+Total cycles: 13247693
+Hit rate: 0.961312
+Miss rate: 0.0386882
+Average memory access time: 15.4753
+Average cycles per access: 43.6939
+Number of blocks: 1024
+Data bytes: 16384
+Total overhead bytes: 7168
+Total bytes used: 23552
+
+no write allocate significantly dips the performance in AMAT and hit rate
+
+
+
+
+
+
+END RESULT TESTING:
+
+./csim 256 32 4 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 218984
+Load misses: 1684
+Store hits: 61645
+Store misses: 20880
+Total cycles: 4208493
+Hit rate: 0.925579
+Miss rate: 0.0744212
+Average memory access time: 7.44212
+Average cycles per access: 13.8806
+Number of blocks: 8192
+Data bytes: 32768
+Total overhead bytes: 57344
+Total bytes used: 90112
+
+./csim 512 32 4 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219044
+Load misses: 1624
+Store hits: 61663
+Store misses: 20862
+Total cycles: 3727693
+Hit rate: 0.925836
+Miss rate: 0.074164
+Average memory access time: 7.4164
+Average cycles per access: 12.2948
+Number of blocks: 16384
+Data bytes: 65536
+Total overhead bytes: 114688
+Total bytes used: 180224
+
+./csim 1024 32 4 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219148
+Load misses: 1520
+Store hits: 61677
+Store misses: 20848
+Total cycles: 2923893
+Hit rate: 0.926225
+Miss rate: 0.0737748
+Average memory access time: 7.37748
+Average cycles per access: 9.64367
+Number of blocks: 32768
+Data bytes: 131072
+Total overhead bytes: 229376
+Total bytes used: 360448
+
+./csim 1024 64 4 write-allocate write-back lru < swim.trace 
+Total loads: 220668
+Total stores: 82525
+Load hits: 219148
+Load misses: 1520
+Store hits: 61677
+Store misses: 20848
+Total cycles: 2539993
+Hit rate: 0.926225
+Miss rate: 0.0737748
+Average memory access time: 7.37748
+Average cycles per access: 8.37748
+Number of blocks: 65536
+Data bytes: 262144
+Total overhead bytes: 458752
+Total bytes used: 720896
+
+./csim 1024 64 8 write-allocate write-back lru < swim.trace
+Total loads: 220668
+Total stores: 82525
+Load hits: 219354
+Load misses: 1314
+Store hits: 64023
+Store misses: 18502
+Total cycles: 4266393
+Hit rate: 0.934642
+Miss rate: 0.0653577
+Average memory access time: 13.0715
+Average cycles per access: 14.0715
+Number of blocks: 65536
+Data bytes: 524288
+Total overhead bytes: 458752
+Total bytes used: 983040
+
+./csim 2048 32 4 write-allocate write-back lru < gcc.trace
+Total loads: 318197
+Total stores: 197486
+Load hits: 313765
+Load misses: 4432
+Store hits: 170130
+Store misses: 27356
+Total cycles: 3695383
+Hit rate: 0.938357
+Miss rate: 0.0616425
+Average memory access time: 6.16425
+Average cycles per access: 7.166
+Number of blocks: 65536
+Data bytes: 262144
+Total overhead bytes: 458752
+Total bytes used: 720896
+
+./csim 1024 32 4 write-allocate write-back lru < gcc.trace
+Total loads: 318197
+Total stores: 197486
+Load hits: 313683
+Load misses: 4514
+Store hits: 170117
+Store misses: 27369
+Total cycles: 4014383
+Hit rate: 0.938173
+Miss rate: 0.0618267
+Average memory access time: 6.18267
+Average cycles per access: 7.78459
+Number of blocks: 32768
+Data bytes: 131072
+Total overhead bytes: 229376
+Total bytes used: 360448
+
+lower the size, slightly slower, but less total storage
